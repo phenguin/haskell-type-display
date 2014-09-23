@@ -203,8 +203,12 @@
 	 (splitts (s-lines typestring))
 	 (cleaned (s-join "\n"
 			  (cons (car splitts)
-				(--map (substring it startcol) (cdr splitts))))))
-    (make-einfo-from-lc cleaned type (car startpos) (cadr startpos) (car endpos) (cadr endpos) buf)))
+				(--map (if (< startcol
+					      (or (string-match "\\S-" it) (length it)))
+					   (substring it startcol)
+					 it)
+				       (cdr splitts))))))
+    (make-einfo-from-lc (progn (message cleaned) cleaned) type (car startpos) (cadr startpos) (car endpos) (cadr endpos) buf)))
 
 ;; Why didn't this already exist..?
 (defun tsp:ghc-run-async-command (cmd callback &optional numresults hook)
@@ -235,7 +239,8 @@
 (defun tsp:to-display-string (einfo &optional n buffer)
   (let* ((exp (einfo-expr einfo))
 	 (type (einfo-type einfo))
-	 (exp (if (string-match "\s+=\s+" exp)
+	 (exp (if (and (string-match "\s+=\s+" exp)
+		     (not (string-match "let" exp)))
 		  (car (split-string exp)) exp))
 	 (sepchar (if (> (+ (length exp) (length type)) 80) "\n" " "))
 	 (s (concat exp " ::" sepchar type)))
