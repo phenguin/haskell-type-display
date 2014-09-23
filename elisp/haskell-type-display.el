@@ -1,4 +1,5 @@
 (require 'ghc)
+(require 'eieio)
 (require 'shm)
 (require 'dash)
 (require 's)
@@ -42,6 +43,11 @@
 	    (define-key map (kbd "C-c k") 'hdt-show-types-around-point)
 	    map)
   (hdt-mode-setup))
+
+(define-minor-mode hdt-display-buffer-mode
+  "Mode for the buffer displaying the types."
+  :lighter "HDTDisplay"
+  :keymap (make-sparse-keymap))
 
 (define-key hdt-mode-map (kbd "C-c k") 'hdt-show-types-around-point)
 
@@ -90,9 +96,11 @@
 		 (initialpoint (point)))
      (lambda (status)
        (ghc-process-callback status)
-       (letf* (((current-buffer) initialbuf)
-	       ((point) initialpoint))
-	 (funcall cb ghc-process-results))))
+       (unwind-protect
+	   (letf* (((current-buffer) initialbuf)
+		   ((point) initialpoint))
+	     (funcall cb ghc-process-results))
+	 (setq ghc-process-running nil))))
    nil hook))
 
 (defun ghc-type-obtain-tinfos-async (callback)
@@ -113,7 +121,7 @@
 (defun hdt-display-type-info (tinfos &optional outputbuffer)
   (interactive)
   (if tinfos
-      (let* ((buf (or outputbuffer "testbuf"))
+      (let* ((buf (or outputbuffer (concat "*HDT:" (buffer-name (current-buffer)) "*")))
 	     (tstrings (-map 'hdt-to-display-string tinfos)))
 	(with-current-buffer (get-buffer-create buf)
 	  (setf (buffer-string)
