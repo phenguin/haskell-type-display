@@ -155,7 +155,7 @@
 	    (define-key map (kbd "C-c C-- s") 'tsp/prompt-case-split)
 	    map)
   (setup-tsp-mode)
-  (hdt/timer-enable))
+  (tsp/timer-enable))
 
 (defun setup-tsp-mode ()
   (set (make-local-variable 'tsp/timer-running) t)
